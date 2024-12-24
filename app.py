@@ -14,11 +14,10 @@ def home():
 
 @app.route("/callback", methods=["POST"])
 def callback():
-    try:
-        # LINEからのリクエストを取得
-        body = request.get_json()
-        print(f"Request body: {body}")
+    # LINEからのリクエストを取得
+    body = request.get_json()
 
+    try:
         # ユーザーからのメッセージを取得
         user_message = body["events"][0]["message"]["text"]
 
@@ -26,7 +25,7 @@ def callback():
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "あなたは瀬戸内町の情報コンシェルジュです。"},
+                {"role": "system", "content": "あなたは親切なアシスタントです。"},
                 {"role": "user", "content": user_message},
             ],
         )
@@ -34,17 +33,17 @@ def callback():
         # OpenAIのレスポンスから返信内容を抽出
         reply_message = response["choices"][0]["message"]["content"]
 
-        # LINEに返信メッセージを返す形式でデータを整形
-        reply_body = {
-            "replyToken": body["events"][0]["replyToken"],
-            "messages": [{"type": "text", "text": reply_message}],
-        }
-
-        return jsonify(reply_body), 200
-
     except Exception as e:
-        print(f"Error: {e}")
-        return "Error occurred", 500
+        # エラーが発生した場合の応答
+        reply_message = f"エラーが発生しました: {str(e)}"
+
+    # LINEに返信メッセージを返す形式でデータを整形
+    reply_body = {
+        "replyToken": body["events"][0]["replyToken"],
+        "messages": [{"type": "text", "text": reply_message}],
+    }
+
+    return jsonify(reply_body), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
