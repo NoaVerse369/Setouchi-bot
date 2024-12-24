@@ -15,11 +15,16 @@ def callback():
     # LINEからのリクエストを取得
     body = request.get_json()
 
-    # ユーザーからのメッセージを取得
-    user_message = body["events"][0]["message"]["text"]
+    # "events"キーが空かどうかチェック
+    events = body.get("events", [])
+    if not events:
+        return "No events to process", 200
 
-    # OpenAIのAPIを呼び出して返信を生成
+    # ユーザーからのメッセージを取得
     try:
+        user_message = events[0]["message"]["text"]
+
+        # OpenAIのAPIを呼び出して返信を生成
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
@@ -31,13 +36,15 @@ def callback():
         # OpenAIのレスポンスから返信内容を抽出
         reply_message = response["choices"][0]["message"]["content"]
 
+    except KeyError:
+        return "Invalid message format", 400
     except Exception as e:
         # エラーが発生した場合の応答
         reply_message = f"エラーが発生しました: {str(e)}"
 
     # LINEに返信メッセージを返す形式でデータを整形
     reply_body = {
-        "replyToken": body["events"][0]["replyToken"],
+        "replyToken": events[0]["replyToken"],
         "messages": [{"type": "text", "text": reply_message}],
     }
 
