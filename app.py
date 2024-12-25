@@ -7,6 +7,10 @@ app = Flask(__name__)
 # OpenAI APIキー
 openai.api_key = "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"
 
+@app.route("/")
+def home():
+    return "LINE Bot is running!", 200
+
 @app.route("/callback", methods=["POST"])
 def callback():
     body = request.get_json()
