@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import openai
+import os
 
 app = Flask(__name__)
 
@@ -11,11 +12,11 @@ def callback():
     body = request.get_json()
     print("Request body received:", body)  # LINEからのリクエスト内容を確認
     
-    user_message = body["events"][0]["message"]["text"]
-    print("User message:", user_message)  # ユーザーが送ったメッセージ
-    
-    # OpenAIへのリクエスト
     try:
+        user_message = body["events"][0]["message"]["text"]
+        print("User message:", user_message)  # ユーザーが送ったメッセージ
+
+        # OpenAIへのリクエスト
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
@@ -29,7 +30,7 @@ def callback():
     except Exception as e:
         print("Error while generating response:", str(e))  # エラー内容を確認
         reply_message = "エラーが発生しました。もう一度お試しください。"
-    
+
     reply_body = {
         "replyToken": body["events"][0]["replyToken"],
         "messages": [{"type": "text", "text": reply_message}],
@@ -37,3 +38,7 @@ def callback():
     print("Reply body:", reply_body)  # LINEに送るデータ内容
     
     return jsonify(reply_body), 200
+
+if __name__ == "__main__":
+    # Render が使用するポートを指定
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
