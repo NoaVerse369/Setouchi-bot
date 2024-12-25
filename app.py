@@ -11,6 +11,10 @@ openai.api_key = "sk-proj-wYrMONCN9TKjZH0qk8zQMl6j_IQ7r0xXOwhc1iEdaiNWE3I2CZmMkd
 def home():
     return "LINE Bot is running!", 200
 
+@app.route("/", methods=["GET"])
+def home():
+    return "LINE Bot is running!"
+
 @app.route("/callback", methods=["POST"])
 def callback():
     body = request.get_json()
