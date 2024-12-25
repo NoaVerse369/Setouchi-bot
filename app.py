@@ -1,24 +1,26 @@
 from flask import Flask, request, jsonify
 import openai
 
-# Flask アプリのインスタンスを作成
 app = Flask(__name__)
 
-# OpenAI APIキーを設定
+# OpenAI APIキー
 openai.api_key = "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"
 
-# 確認用のエンドポイント
 @app.route("/", methods=["GET"])
 def home():
     return "LINE Bot is running!"
 
-# LINEのWebhookエンドポイント
 @app.route("/callback", methods=["POST"])
 def callback():
     try:
         # リクエストボディを取得
         body = request.get_json()
-        print("Request body received:", body)  # デバッグ用
+        print("Request body received:", body)  # リクエスト内容を表示
+
+        # イベントがない場合のチェック
+        if not body.get("events"):
+            print("No events in request body")
+            return "No events", 400
 
         # ユーザーからのメッセージ取得
         user_message = body["events"][0]["message"]["text"]
@@ -40,11 +42,13 @@ def callback():
             "replyToken": body["events"][0]["replyToken"],
             "messages": [{"type": "text", "text": reply_message}],
         }
+        print("Reply body to LINE:", reply_body)
         return jsonify(reply_body), 200
 
     except Exception as e:
-        print("Error:", str(e))  # エラー内容を出力
-        return "Internal Server Error", 500
+        # エラー内容をログに表示
+        print("Error:", str(e))
+        return f"Internal Server Error: {str(e)}", 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
