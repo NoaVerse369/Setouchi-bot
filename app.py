@@ -3,52 +3,50 @@ import openai
 
 app = Flask(__name__)
 
-# OpenAI APIキー
+# OpenAI APIキーを設定
 openai.api_key = "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"
 
-@app.route("/", methods=["GET"])
+@app.route("/")
 def home():
-    return "LINE Bot is running!"
+    return "Bot is running!", 200
 
 @app.route("/callback", methods=["POST"])
 def callback():
     try:
-        # リクエストボディを取得
         body = request.get_json()
-        print("Request body received:", body)  # リクエスト内容を表示
+        print("Request body received:", body)
 
-        # イベントがない場合のチェック
-        if not body.get("events"):
-            print("No events in request body")
-            return "No events", 400
+        # イベントがない場合
+        if "events" not in body or len(body["events"]) == 0:
+            print("No events found in the request body.")
+            return jsonify({"status": "no events"}), 400
 
-        # ユーザーからのメッセージ取得
-        user_message = body["events"][0]["message"]["text"]
-        print("User message:", user_message)
+        # ユーザーメッセージ取得
+        event = body["events"][0]
+        user_message = event["message"]["text"]
+        print("User message received:", user_message)
 
-        # ChatGPTにメッセージを送信して応答を生成
+        # ChatGPTに問い合わせ
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "あなたは親切なアシスタントです。"},
-                {"role": "user", "content": user_message},
-            ],
+                {"role": "user", "content": user_message}
+            ]
         )
         reply_message = response["choices"][0]["message"]["content"]
-        print("Generated reply:", reply_message)
+        print("OpenAI response:", reply_message)
 
-        # LINEの返信形式に変換
+        # LINEへの返信データ
         reply_body = {
-            "replyToken": body["events"][0]["replyToken"],
+            "replyToken": event["replyToken"],
             "messages": [{"type": "text", "text": reply_message}],
         }
-        print("Reply body to LINE:", reply_body)
         return jsonify(reply_body), 200
 
     except Exception as e:
-        # エラー内容をログに表示
         print("Error:", str(e))
-        return f"Internal Server Error: {str(e)}", 500
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
